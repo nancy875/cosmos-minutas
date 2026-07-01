@@ -307,6 +307,7 @@ window.onerror = function(msg, src, line, col, err){
       <button class="btn btn-secondary" onclick="openChangePass()" title="Cambiar contraseña">🔑</button>
       <button class="btn btn-secondary" onclick="exportCSV()">⬇ Exportar CSV</button>
       <button class="btn btn-secondary" onclick="limpiarEspacio()" style="color:var(--amber)">🗑 Liberar espacio</button>
+      <button class="btn btn-secondary" onclick="forzarSync()" style="color:var(--green)" title="Subir todos los datos locales a Firebase">☁️ Forzar sync</button>
       <button class="btn btn-secondary" onclick="exportHistorialExcel()" title="Exportar historiales a Excel" style="color:var(--green)">📊 Historiales Excel</button>
       <button class="btn btn-primary" id="btnAgregar" onclick="openModal()">＋ Agregar bien</button>
     </div>
@@ -1592,6 +1593,26 @@ function renderNM(){
 function nmVerArchivo(id){
   var e = nmData.find(function(x){ return x.id===id; }); if(!e||!e.archivo) return;
   var w = window.open(); w.document.write('<img src="'+e.archivo+'" style="max-width:100%"><br><a href="'+e.archivo+'" download="comprobante">Descargar</a>');
+}
+
+function forzarSync(){
+  if(!fbReady()){
+    showNotif('⚠ Firebase no está conectado. Verifica tu conexión.','amber');
+    return;
+  }
+  try{
+    _ignorarSiguienteUpdate = false;
+    fbWrite('hw', hwData);
+    fbWrite('sw', swData);
+    fbWrite('ar', arData);
+    fbWrite('sv', svData);
+    fbWrite('rb', rbData);
+    fbWrite('imp', impData);
+    fbWrite('nm', nmData);
+    showNotif('☁️ Todos los datos subidos a Firebase. Otros usuarios verán los cambios en segundos.','green');
+  }catch(e){
+    showNotif('⚠ Error al sincronizar: '+e.message,'amber');
+  }
 }
 
 function limpiarEspacio(){
