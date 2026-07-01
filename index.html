@@ -1687,6 +1687,7 @@ function fbStartListeners(){
     sv:  function(){ try{renderSV();}catch(e){} try{renderMetrics();}catch(e){} try{renderFinancialSummary();}catch(e){} try{checkAlertBanner();}catch(e){} },
     rb:  function(){ try{renderReembolsos();}catch(e){} try{renderMetrics();}catch(e){} try{renderFinancialSummary();}catch(e){} },
     imp: function(){ try{renderIMP();}catch(e){} try{renderMetrics();}catch(e){} try{renderFinancialSummary();}catch(e){} },
+    nm:  function(){ try{renderNM();}catch(e){} try{renderMetrics();}catch(e){} try{renderFinancialSummary();}catch(e){} },
   };
 
   Object.keys(paths).forEach(function(path){
@@ -1699,9 +1700,29 @@ function fbStartListeners(){
       if(path==='hw') hwData=arr;
       else if(path==='sw') swData=arr;
       else if(path==='ar') arData=arr;
-      else if(path==='sv') svData=arr;
+      else if(path==='sv'){
+        // Corregir fechas de servicios pagados con fecha vencida
+        var _hoyFb=new Date(); _hoyFb.setHours(0,0,0,0);
+        arr.forEach(function(s){
+          if((s.statusPago==='pagado'||s.statusPago==='en tiempo')&&s.fechalimite){
+            var _df=new Date(s.fechalimite); _df.setHours(0,0,0,0);
+            if(_df<_hoyFb){
+              var _f=(s.frecuencia||'Mensual').toLowerCase();
+              var _n=new Date(_hoyFb);
+              if(_f==='mensual') _n.setMonth(_n.getMonth()+1);
+              else if(_f==='bimestral') _n.setMonth(_n.getMonth()+2);
+              else if(_f==='trimestral') _n.setMonth(_n.getMonth()+3);
+              else if(_f==='semestral') _n.setMonth(_n.getMonth()+6);
+              else if(_f==='anual') _n.setFullYear(_n.getFullYear()+1);
+              s.fechalimite=_n.toISOString().slice(0,10);
+            }
+          }
+        });
+        svData=arr;
+      }
       else if(path==='rb') rbData=arr;
       else if(path==='imp') impData=arr;
+      else if(path==='nm') nmData=arr;
       if(KEYS[path]) localStorage.setItem(KEYS[path], JSON.stringify(arr));
       renderFn();
       showSyncNotif('🔄 Actualizado en tiempo real');
@@ -2424,6 +2445,7 @@ try{
         if(e.data.ar){arData=JSON.parse(e.data.ar);try{renderAR();}catch(x){}}
         if(e.data.sv){svData=JSON.parse(e.data.sv);try{renderSV();}catch(x){}}
         if(e.data.rb){rbData=JSON.parse(e.data.rb);try{renderReembolsos();}catch(x){}}
+        if(e.data.nm){nmData=JSON.parse(e.data.nm);try{renderNM();}catch(x){}}
         try{renderMetrics();renderFinancialSummary();checkAlertBanner();}catch(x){}
         try{showSyncNotif('🔄 Actualizado por otro usuario');}catch(x){}
       }catch(ex){}
